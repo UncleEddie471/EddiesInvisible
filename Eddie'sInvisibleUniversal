@@ -1,0 +1,583 @@
+-- ════════════════════════════════════════════════════════════════
+--  Eddie's Invisible Universal
+--  UI     : WindUI Style  ·  Glass Theme
+--  Build  : 2026.04.25.3
+--  Notes  : toggle invisibility with G or the UI button. keyless.
+-- ════════════════════════════════════════════════════════════════
+
+local function __main()
+    local Players          = game:GetService("Players")
+    local RunService       = game:GetService("RunService")
+    local UserInputService = game:GetService("UserInputService")
+    local TweenService     = game:GetService("TweenService")
+    local CoreGui          = game:GetService("CoreGui")
+
+    local LocalPlayer      = Players.LocalPlayer
+
+    repeat task.wait() until LocalPlayer.Character
+    local Character        = LocalPlayer.Character
+    local Humanoid         = Character:WaitForChild("Humanoid")
+    local HRP              = Character:WaitForChild("HumanoidRootPart")
+
+    local GUIParent = CoreGui
+    if not GUIParent then GUIParent = LocalPlayer:WaitForChild("PlayerGui") end
+
+    pcall(function()
+        for _, g in ipairs(GUIParent:GetChildren()) do
+            if g.Name == "EIU_GUI" or g.Name == "EIU_Float" or g.Name == "EIU_Loader" then
+                g:Destroy()
+            end
+        end
+    end)
+
+    -- ── palette ─────────────────────────────────────────────────
+    local C = {
+        bg        = Color3.fromRGB(16, 14, 22),
+        glass     = Color3.fromRGB(26, 22, 34),
+        glassHi   = Color3.fromRGB(38, 32, 48),
+        card      = Color3.fromRGB(32, 26, 42),
+        cardHov   = Color3.fromRGB(44, 36, 58),
+        accent    = Color3.fromRGB(160, 100, 255),
+        accentB   = Color3.fromRGB(100, 50, 200),
+        accentSoft= Color3.fromRGB(200, 160, 255),
+        border    = Color3.fromRGB(70, 55, 100),
+        borderSoft= Color3.fromRGB(55, 44, 78),
+        text      = Color3.fromRGB(245, 240, 255),
+        dim       = Color3.fromRGB(160, 145, 190),
+        white     = Color3.fromRGB(255, 255, 255),
+        on        = Color3.fromRGB(160, 100, 255),
+        off       = Color3.fromRGB(48, 38, 62),
+        red       = Color3.fromRGB(255, 100, 120),
+        green     = Color3.fromRGB(120, 230, 160),
+    }
+
+    local State = {
+        Invisible = false,
+        UIKey     = Enum.KeyCode.Q,
+    }
+
+    local function corner(o, r)
+        local c = Instance.new("UICorner", o)
+        c.CornerRadius = UDim.new(0, r or 10)
+        return c
+    end
+    local function stroke(o, col, thick, trans)
+        local s = Instance.new("UIStroke", o)
+        s.Color = col or C.border
+        s.Thickness = thick or 1
+        s.Transparency = trans or 0
+        s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        return s
+    end
+    local function gradient(o, c1, c2, rot)
+        local g = Instance.new("UIGradient", o)
+        g.Color = ColorSequence.new(c1, c2)
+        g.Rotation = rot or 0
+        return g
+    end
+
+    -- collect all visible parts
+    local bodyParts = {}
+    local function collectParts()
+        bodyParts = {}
+        for _, d in ipairs(Character:GetDescendants()) do
+            if d:IsA("BasePart") and d.Transparency == 0 then
+                table.insert(bodyParts, d)
+            end
+        end
+    end
+
+    -- toggle
+    local function applyInvisible()
+        for _, p in ipairs(bodyParts) do
+            p.Transparency = State.Invisible and 0.5 or 0
+        end
+    end
+
+    -- ════════════════════════════════════════════════════════════
+    --  BOOT SPLASH
+    -- ════════════════════════════════════════════════════════════
+    local splash = Instance.new("ScreenGui")
+    splash.Name = "EIU_Loader"
+    splash.ResetOnSpawn = false
+    splash.DisplayOrder = 1000
+    splash.IgnoreGuiInset = true
+    splash.Parent = GUIParent
+
+    local veil = Instance.new("Frame", splash)
+    veil.Size = UDim2.new(1,0,1,0)
+    veil.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    veil.BackgroundTransparency = 1
+    veil.BorderSizePixel = 0
+    TweenService:Create(veil, TweenInfo.new(0.4), {BackgroundTransparency = 0.5}):Play()
+
+    local boot = Instance.new("Frame", splash)
+    boot.AnchorPoint = Vector2.new(0.5, 0.5)
+    boot.Position = UDim2.new(0.5, 0, 0.65, 0)
+    boot.Size = UDim2.new(0, 460, 0, 200)
+    boot.BackgroundColor3 = C.glass
+    boot.BackgroundTransparency = 0.08
+    boot.BorderSizePixel = 0
+    boot.ClipsDescendants = true
+    corner(boot, 18)
+    stroke(boot, C.border, 1)
+
+    local glow = Instance.new("Frame", boot)
+    glow.Size = UDim2.new(1, 0, 0, 3)
+    glow.BackgroundColor3 = C.accent
+    glow.BorderSizePixel = 0
+    gradient(glow, C.accentSoft, C.accentB, 0)
+
+    local mark = Instance.new("Frame", boot)
+    mark.Size = UDim2.new(0, 54, 0, 54)
+    mark.Position = UDim2.new(0, 28, 0, 30)
+    mark.BackgroundColor3 = C.accentB
+    mark.BorderSizePixel = 0
+    corner(mark, 14)
+    gradient(mark, C.accentSoft, C.accentB, 45)
+
+    local markTxt = Instance.new("TextLabel", mark)
+    markTxt.Size = UDim2.new(1,0,1,0)
+    markTxt.BackgroundTransparency = 1
+    markTxt.Text = "E"
+    markTxt.TextColor3 = C.white
+    markTxt.Font = Enum.Font.GothamBlack
+    markTxt.TextSize = 32
+
+    local bTitle = Instance.new("TextLabel", boot)
+    bTitle.Size = UDim2.new(1, -110, 0, 24)
+    bTitle.Position = UDim2.new(0, 96, 0, 34)
+    bTitle.BackgroundTransparency = 1
+    bTitle.Text = "Eddie's Invisible Universal"
+    bTitle.TextColor3 = C.text
+    bTitle.Font = Enum.Font.GothamBlack
+    bTitle.TextSize = 16
+    bTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    local bTag = Instance.new("TextLabel", boot)
+    bTag.Size = UDim2.new(1, -110, 0, 16)
+    bTag.Position = UDim2.new(0, 96, 0, 58)
+    bTag.BackgroundTransparency = 1
+    bTag.Text = "WindUI  ·  Universal"
+    bTag.TextColor3 = C.accent
+    bTag.Font = Enum.Font.GothamBold
+    bTag.TextSize = 11
+    bTag.TextXAlignment = Enum.TextXAlignment.Left
+
+    local bStatus = Instance.new("TextLabel", boot)
+    bStatus.Size = UDim2.new(1, -56, 0, 16)
+    bStatus.Position = UDim2.new(0, 28, 0, 104)
+    bStatus.BackgroundTransparency = 1
+    bStatus.Text = "Booting..."
+    bStatus.TextColor3 = C.dim
+    bStatus.Font = Enum.Font.Gotham
+    bStatus.TextSize = 11
+    bStatus.TextXAlignment = Enum.TextXAlignment.Left
+
+    local track = Instance.new("Frame", boot)
+    track.Size = UDim2.new(1, -56, 0, 6)
+    track.Position = UDim2.new(0, 28, 0, 128)
+    track.BackgroundColor3 = C.off
+    track.BorderSizePixel = 0
+    corner(track, 3)
+
+    local fill = Instance.new("Frame", track)
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = C.accent
+    fill.BorderSizePixel = 0
+    corner(fill, 3)
+    gradient(fill, C.accentSoft, C.accentB, 0)
+
+    local pct = Instance.new("TextLabel", boot)
+    pct.Size = UDim2.new(1, -56, 0, 16)
+    pct.Position = UDim2.new(0, 28, 0, 142)
+    pct.BackgroundTransparency = 1
+    pct.Text = "0%"
+    pct.TextColor3 = C.accent
+    pct.Font = Enum.Font.GothamBold
+    pct.TextSize = 10
+    pct.TextXAlignment = Enum.TextXAlignment.Right
+
+    local stamp = Instance.new("TextLabel", boot)
+    stamp.Size = UDim2.new(1, -56, 0, 14)
+    stamp.Position = UDim2.new(0, 28, 1, -22)
+    stamp.BackgroundTransparency = 1
+    stamp.Text = "v1.0  ·  eddie"
+    stamp.TextColor3 = C.border
+    stamp.Font = Enum.Font.Gotham
+    stamp.TextSize = 9
+    stamp.TextXAlignment = Enum.TextXAlignment.Right
+
+    TweenService:Create(boot, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    task.wait(0.55)
+
+    for i = 1, 4 do
+        bStatus.Text = ({"Scanning character", "Collecting parts", "Building UI", "Ready"})[i] .. "..."
+        local p = i / 4
+        TweenService:Create(fill, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(p, 0, 1, 0)
+        }):Play()
+        pct.Text = math.floor(p * 100) .. "%"
+        task.wait(0.25)
+    end
+
+    bStatus.Text = "Ready"
+    bStatus.TextColor3 = C.green
+    task.wait(0.25)
+    TweenService:Create(boot, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.5, 0, -0.4, 0)
+    }):Play()
+    TweenService:Create(veil, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+    task.wait(0.38)
+    splash:Destroy()
+
+    -- ════════════════════════════════════════════════════════════
+    --  MAIN WINDOW
+    -- ════════════════════════════════════════════════════════════
+    local Gui = Instance.new("ScreenGui")
+    Gui.Name = "EIU_GUI"
+    Gui.ResetOnSpawn = false
+    Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    Gui.DisplayOrder = 999
+    Gui.IgnoreGuiInset = true
+    Gui.Parent = GUIParent
+
+    local Win = Instance.new("Frame", Gui)
+    Win.Size = UDim2.new(0, 340, 0, 200)
+    Win.Position = UDim2.new(0.5, -170, 0.5, -100)
+    Win.BackgroundColor3 = C.glass
+    Win.BackgroundTransparency = 0.06
+    Win.BorderSizePixel = 0
+    Win.ClipsDescendants = true
+    Win.Active = true
+    corner(Win, 16)
+    local winStroke = stroke(Win, C.border, 1)
+
+    local winGlow = Instance.new("Frame", Win)
+    winGlow.Size = UDim2.new(1, 0, 0, 1)
+    winGlow.Position = UDim2.new(0, 0, 0, 0)
+    winGlow.BackgroundColor3 = C.accentSoft
+    winGlow.BackgroundTransparency = 0.4
+    winGlow.BorderSizePixel = 0
+
+    local TBar = Instance.new("Frame", Win)
+    TBar.Size = UDim2.new(1, 0, 0, 44)
+    TBar.BackgroundColor3 = C.glassHi
+    TBar.BackgroundTransparency = 0.35
+    TBar.BorderSizePixel = 0
+
+    local TBarDiv = Instance.new("Frame", TBar)
+    TBarDiv.Size = UDim2.new(1, 0, 0, 1)
+    TBarDiv.Position = UDim2.new(0, 0, 1, -1)
+    TBarDiv.BackgroundColor3 = C.borderSoft
+    TBarDiv.BorderSizePixel = 0
+
+    local mark2 = Instance.new("Frame", TBar)
+    mark2.Size = UDim2.new(0, 26, 0, 26)
+    mark2.Position = UDim2.new(0, 16, 0.5, -13)
+    mark2.BackgroundColor3 = C.accentB
+    mark2.BorderSizePixel = 0
+    corner(mark2, 8)
+    gradient(mark2, C.accentSoft, C.accentB, 45)
+
+    local mark2Txt = Instance.new("TextLabel", mark2)
+    mark2Txt.Size = UDim2.new(1,0,1,0)
+    mark2Txt.BackgroundTransparency = 1
+    mark2Txt.Text = "E"
+    mark2Txt.TextColor3 = C.white
+    mark2Txt.Font = Enum.Font.GothamBlack
+    mark2Txt.TextSize = 14
+
+    local TTitle = Instance.new("TextLabel", TBar)
+    TTitle.Size = UDim2.new(1, -140, 1, 0)
+    TTitle.Position = UDim2.new(0, 52, 0, 0)
+    TTitle.BackgroundTransparency = 1
+    TTitle.Text = "Eddie's Invisible Universal"
+    TTitle.TextColor3 = C.text
+    TTitle.Font = Enum.Font.GothamBlack
+    TTitle.TextSize = 13
+    TTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    local function headerBtn(xOff, lbl, isClose)
+        local b = Instance.new("TextButton", TBar)
+        b.Size = UDim2.new(0, 24, 0, 24)
+        b.Position = UDim2.new(1, xOff, 0.5, -12)
+        b.BackgroundColor3 = isClose and C.red or C.card
+        b.BackgroundTransparency = 0.55
+        b.BorderSizePixel = 0
+        b.Text = lbl
+        b.TextColor3 = isClose and C.white or C.dim
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.AutoButtonColor = false
+        corner(b, 8)
+        stroke(b, isClose and C.red or C.borderSoft, 1, 0.3)
+        return b
+    end
+
+    local HideBtn  = headerBtn(-36, "−", false)
+    local CloseBtn = headerBtn(-68, "×", true)
+
+    local Body = Instance.new("Frame", Win)
+    Body.Size = UDim2.new(1, -24, 1, -76)
+    Body.Position = UDim2.new(0, 12, 0, 56)
+    Body.BackgroundTransparency = 1
+
+    -- big toggle
+    local toggleCard = Instance.new("Frame", Body)
+    toggleCard.Size = UDim2.new(1, 0, 0, 70)
+    toggleCard.BackgroundColor3 = C.card
+    toggleCard.BackgroundTransparency = 0.25
+    toggleCard.BorderSizePixel = 0
+    corner(toggleCard, 12)
+    stroke(toggleCard, C.borderSoft, 1, 0.5)
+
+    local tLbl = Instance.new("TextLabel", toggleCard)
+    tLbl.Size = UDim2.new(1, -80, 0, 20)
+    tLbl.Position = UDim2.new(0, 16, 0, 14)
+    tLbl.BackgroundTransparency = 1
+    tLbl.Text = "Invisibility"
+    tLbl.TextColor3 = C.text
+    tLbl.Font = Enum.Font.GothamBold
+    tLbl.TextSize = 14
+    tLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local tDesc = Instance.new("TextLabel", toggleCard)
+    tDesc.Size = UDim2.new(1, -80, 0, 16)
+    tDesc.Position = UDim2.new(0, 16, 0, 36)
+    tDesc.BackgroundTransparency = 1
+    tDesc.Text = "Press G or click the toggle"
+    tDesc.TextColor3 = C.dim
+    tDesc.Font = Enum.Font.Gotham
+    tDesc.TextSize = 10
+    tDesc.TextXAlignment = Enum.TextXAlignment.Left
+
+    local sw = Instance.new("Frame", toggleCard)
+    sw.Size = UDim2.new(0, 52, 0, 28)
+    sw.Position = UDim2.new(1, -68, 0.5, -14)
+    sw.BackgroundColor3 = C.off
+    sw.BackgroundTransparency = 0.3
+    sw.BorderSizePixel = 0
+    corner(sw, 14)
+    stroke(sw, C.borderSoft, 1, 0.3)
+
+    local knob = Instance.new("Frame", sw)
+    knob.Size = UDim2.new(0, 22, 0, 22)
+    knob.Position = UDim2.new(0, 3, 0.5, -11)
+    knob.BackgroundColor3 = C.white
+    knob.BorderSizePixel = 0
+    corner(knob, 11)
+
+    local function refreshToggle()
+        TweenService:Create(sw, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = State.Invisible and C.on or C.off,
+            BackgroundTransparency = State.Invisible and 0 or 0.3,
+        }):Play()
+        TweenService:Create(knob, TweenInfo.new(0.22, Enum.EasingStyle.Back), {
+            Position = State.Invisible and UDim2.new(1, -25, 0.5, -11) or UDim2.new(0, 3, 0.5, -11),
+        }):Play()
+    end
+
+    local function toggleInvisible()
+        State.Invisible = not State.Invisible
+        applyInvisible()
+        refreshToggle()
+    end
+
+    local clk = Instance.new("TextButton", toggleCard)
+    clk.Size = UDim2.new(1, 0, 1, 0)
+    clk.BackgroundTransparency = 1
+    clk.Text = ""
+    clk.ZIndex = 2
+    clk.MouseButton1Click:Connect(toggleInvisible)
+
+    -- keybind hint
+    local hint = Instance.new("Frame", Body)
+    hint.Size = UDim2.new(1, 0, 0, 34)
+    hint.Position = UDim2.new(0, 0, 0, 80)
+    hint.BackgroundColor3 = C.card
+    hint.BackgroundTransparency = 0.25
+    hint.BorderSizePixel = 0
+    corner(hint, 12)
+    stroke(hint, C.borderSoft, 1, 0.5)
+
+    local hLbl = Instance.new("TextLabel", hint)
+    hLbl.Size = UDim2.new(1, -80, 1, 0)
+    hLbl.Position = UDim2.new(0, 16, 0, 0)
+    hLbl.BackgroundTransparency = 1
+    hLbl.Text = "Toggle Key"
+    hLbl.TextColor3 = C.text
+    hLbl.Font = Enum.Font.GothamBold
+    hLbl.TextSize = 12
+    hLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local kb = Instance.new("Frame", hint)
+    kb.Size = UDim2.new(0, 48, 0, 22)
+    kb.Position = UDim2.new(1, -62, 0.5, -11)
+    kb.BackgroundColor3 = C.off
+    kb.BackgroundTransparency = 0.2
+    kb.BorderSizePixel = 0
+    corner(kb, 8)
+    stroke(kb, C.borderSoft, 1, 0.4)
+
+    local kt = Instance.new("TextLabel", kb)
+    kt.Size = UDim2.new(1, 0, 1, 0)
+    kt.BackgroundTransparency = 1
+    kt.Text = "G"
+    kt.TextColor3 = C.accent
+    kt.Font = Enum.Font.GothamBold
+    kt.TextSize = 12
+
+    -- footer
+    local Footer = Instance.new("Frame", Win)
+    Footer.Size = UDim2.new(1, 0, 0, 28)
+    Footer.Position = UDim2.new(0, 0, 1, -28)
+    Footer.BackgroundColor3 = C.glassHi
+    Footer.BackgroundTransparency = 0.45
+    Footer.BorderSizePixel = 0
+
+    local FooterDiv = Instance.new("Frame", Footer)
+    FooterDiv.Size = UDim2.new(1, 0, 0, 1)
+    FooterDiv.Position = UDim2.new(0, 0, 0, 0)
+    FooterDiv.BackgroundColor3 = C.borderSoft
+    FooterDiv.BorderSizePixel = 0
+
+    local FOwner = Instance.new("TextLabel", Footer)
+    FOwner.Size = UDim2.new(0.5, -12, 1, 0)
+    FOwner.Position = UDim2.new(0, 14, 0, 0)
+    FOwner.BackgroundTransparency = 1
+    FOwner.Text = "Eddie's Invisible  ·  keyless"
+    FOwner.TextColor3 = C.dim
+    FOwner.Font = Enum.Font.GothamBold
+    FOwner.TextSize = 10
+    FOwner.TextXAlignment = Enum.TextXAlignment.Left
+
+    local FStats = Instance.new("TextLabel", Footer)
+    FStats.Size = UDim2.new(0.5, -12, 1, 0)
+    FStats.Position = UDim2.new(0.5, 0, 0, 0)
+    FStats.BackgroundTransparency = 1
+    FStats.Text = "universal"
+    FStats.TextColor3 = C.dim
+    FStats.Font = Enum.Font.Gotham
+    FStats.TextSize = 10
+    FStats.TextXAlignment = Enum.TextXAlignment.Right
+
+    -- float reopen
+    local FloatGui = Instance.new("ScreenGui")
+    FloatGui.Name = "EIU_Float"
+    FloatGui.ResetOnSpawn = false
+    FloatGui.DisplayOrder = 998
+    FloatGui.Parent = GUIParent
+    FloatGui.Enabled = false
+
+    local FloatBtn = Instance.new("TextButton", FloatGui)
+    FloatBtn.Size = UDim2.new(0, 190, 0, 36)
+    FloatBtn.Position = UDim2.new(1, -206, 0, 14)
+    FloatBtn.BackgroundColor3 = C.glass
+    FloatBtn.BackgroundTransparency = 0.1
+    FloatBtn.BorderSizePixel = 0
+    FloatBtn.Text = ""
+    FloatBtn.AutoButtonColor = false
+    corner(FloatBtn, 18)
+    local fStroke = stroke(FloatBtn, C.border, 1)
+
+    local fMark = Instance.new("Frame", FloatBtn)
+    fMark.Size = UDim2.new(0, 22, 0, 22)
+    fMark.Position = UDim2.new(0, 8, 0.5, -11)
+    fMark.BackgroundColor3 = C.accentB
+    fMark.BorderSizePixel = 0
+    corner(fMark, 7)
+    gradient(fMark, C.accentSoft, C.accentB, 45)
+
+    local fMarkTxt = Instance.new("TextLabel", fMark)
+    fMarkTxt.Size = UDim2.new(1,0,1,0)
+    fMarkTxt.BackgroundTransparency = 1
+    fMarkTxt.Text = "E"
+    fMarkTxt.TextColor3 = C.white
+    fMarkTxt.Font = Enum.Font.GothamBlack
+    fMarkTxt.TextSize = 12
+
+    local fTxt = Instance.new("TextLabel", FloatBtn)
+    fTxt.Size = UDim2.new(1, -40, 1, 0)
+    fTxt.Position = UDim2.new(0, 36, 0, 0)
+    fTxt.BackgroundTransparency = 1
+    fTxt.Text = "Eddie's Invisible"
+    fTxt.TextColor3 = C.text
+    fTxt.Font = Enum.Font.GothamBold
+    fTxt.TextSize = 12
+    fTxt.TextXAlignment = Enum.TextXAlignment.Left
+
+    HideBtn.MouseButton1Click:Connect(function() Gui.Enabled = false; FloatGui.Enabled = true end)
+    CloseBtn.MouseButton1Click:Connect(function() Gui:Destroy(); FloatGui:Destroy() end)
+    FloatBtn.MouseButton1Click:Connect(function() Gui.Enabled = true; FloatGui.Enabled = false end)
+
+    -- drag
+    local dragOn, dragStart, winStart = false, nil, nil
+    TBar.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            dragOn = true; dragStart = inp.Position; winStart = Win.Position
+        end
+    end)
+    TBar.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            dragOn = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(inp)
+        if not dragOn then return end
+        if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+            Win.Position = UDim2.new(
+                winStart.X.Scale, winStart.X.Offset + (inp.Position.X - dragStart.X),
+                winStart.Y.Scale, winStart.Y.Offset + (inp.Position.Y - dragStart.Y)
+            )
+        end
+    end)
+
+    -- keybind
+    UserInputService.InputBegan:Connect(function(inp, gp)
+        if gp then return end
+        if inp.KeyCode == Enum.KeyCode.G then
+            toggleInvisible()
+        elseif inp.KeyCode == State.UIKey then
+            Gui.Enabled = not Gui.Enabled
+            if Gui.Enabled then FloatGui.Enabled = false end
+        end
+    end)
+
+    -- heartbat: keep player's parts invisible while flag is on
+    RunService.Heartbeat:Connect(function()
+        if State.Invisible then
+            local root = Character and Character:FindFirstChild("HumanoidRootPart")
+            local hum = Character and Character:FindFirstChildOfClass("Humanoid")
+            if root and hum then
+                local camCF = root.CFrame
+                local camOffset = hum.CameraOffset
+                local hidden = camCF * CFrame.new(0, -200000, 0)
+                local pos = hidden:ToObjectSpace(CFrame.new(camCF.Position)).Position
+                root.CFrame = hidden
+                hum.CameraOffset = pos
+                RunService.RenderStepped:Wait()
+                root.CFrame = camCF
+                hum.CameraOffset = camOffset
+            end
+        end
+    end)
+
+    -- respawn handling
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        Character = char
+        Humanoid = char:WaitForChild("Humanoid")
+        HRP = char:WaitForChild("HumanoidRootPart")
+        State.Invisible = false
+        refreshToggle()
+        task.wait(0.5)
+        collectParts()
+    end)
+
+    collectParts()
+end
+
+local ok, err = pcall(__main)
+if not ok then warn("[Eddie's Invisible Universal] Error: " .. tostring(err)) end
